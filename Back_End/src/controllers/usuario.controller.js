@@ -1,6 +1,7 @@
 const {validationResult} = require('express-validator');
 const usuarioService = require('../service/usuarioService');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 // Obtener todos los usuarios
 exports.getAllUsuarios = async (req, res) => {
@@ -52,6 +53,10 @@ exports.updateUsuario = async (req, res) => {
 
 exports.deleteUsuario = async (req, res) => {
   try {
+    //Solo los administradores pueden eliminar usuarios
+    if (req.usuario.rol !== 'admin') {
+      return res.status(403).json({ mensaje: 'No tienes permisos para eliminar usuarios' });
+    }
     await usuarioService.deleteUsuario(req.params.id);
     res.json({ mensaje: 'Usuario eliminado' });
   } catch (error) {
@@ -59,6 +64,7 @@ exports.deleteUsuario = async (req, res) => {
   }
 };
 
+//Login de usuario
 exports.loginUsuario = async (req, res) => { 
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -80,9 +86,39 @@ exports.loginUsuario = async (req, res) => {
       return res.status(400).json({ mensaje: 'Usuario o contraseña incorrectos' });
     }
 
+ // Generar JWT
+    const token = jwt.sign(
+      { id: usuario._id, email: usuario.email },
+      process.env.JWT_SECRET || 'secreto',
+      { expiresIn: '2h' }
+    );
+
     // Login exitoso
-    res.json({ mensaje: 'Login exitoso', usuario: { id: usuario._id, nombre: usuario.nombre, email: usuario.email } });
+    res.json({
+      mensaje: 'Login exitoso',
+      token,
+      usuario: { id: usuario._id, nombre: usuario.nombre, email: usuario.email }
+    });
   } catch (error) {
     res.status(500).json({ mensaje: 'Error en el login', error: error.message });
+  }
+}; 
+
+//Registro de usuario
+exports.registerUsuario = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errores: errors.array() });
+  }
+  try {
+    const { nombre, email, contrasena } = req.body;
+    const existe = await usuarioService.getUsuarioPorEmail(email);
+    if (existe) {
+      return res.status(400).json({ mensaje: 'El email ya está registrado' });
+    }
+    const nuevoUsuario = await usuarioService.createUsuario({ nombre, email, contrasena });
+    res.status(201).json({ mensaje: 'Usuario registrado correctamente', usuario: { id: nuevoUsuario._id, nombre, email } });
+  } catch (error) {
+    res.status(400).json({ mensaje: 'Error al registrar el usuario', error: error.message });
   }
 };

@@ -2,26 +2,41 @@ const express = require('express');
 const router = express.Router();
 const usuarioController = require('../controllers/usuario.controller');
 const {body}= require('express-validator');
+const auth = require('../middleware/auth');
 
 // Obtener todos los usuarios
-router.get('/', usuarioController.getAllUsuarios);
+router.get('/', auth, usuarioController.getAllUsuarios);
 
 // Obtener un usuario por ID
-router.get('/:id', usuarioController.getUsuarioById);
+router.get('/:id', auth, usuarioController.getUsuarioById);
 
 // Crear un nuevo usuario
 router.post('/', usuarioController.createUsuario);
 
 // Actualizar un usuario existente
-router.put('/:id', usuarioController.updateUsuario);
+router.put('/:id', auth, usuarioController.updateUsuario);
 
 // Eliminar un usuario
-router.delete('/:id', usuarioController.deleteUsuario);
+router.delete('/:id', auth, usuarioController.deleteUsuario);
 
-//Rutas de login y registro
-router.post('/login', 
+// Registro
+router.post(
+    '/register',
+    [
+    body('nombre').notEmpty().withMessage('El nombre es obligatorio'),
     body('email').isEmail().withMessage('Debe ser un correo electrónico válido'),
-    body('contrasena').notEmpty().withMessage('La contraseña es obligatoria'),
+    body('contrasena').isLength({ min: 6 }).withMessage('La contraseña debe tener al menos 6 caracteres')
+    ],
+    usuarioController.registerUsuario
+);
+
+// Login
+router.post(
+    '/login',
+    [
+    body('email').isEmail().withMessage('Email inválido'),
+    body('contrasena').notEmpty().withMessage('La contraseña es obligatoria')
+    ],
     usuarioController.loginUsuario
 );
 

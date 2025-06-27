@@ -7,8 +7,8 @@ async function createTarea(data) {
 }
 
 // Obtener todas las tareas
-async function getAllTareas() {
-  return await Tarea.find();
+async function getAllTareas(usuarioId) {
+  return await Tarea.find({usuarioId});
 }
 
 // Obtener una tarea por ID

@@ -1,10 +1,12 @@
+const Usuario = require('../models/Usuario');
 const tareaService = require('../service/tareaService');
+const { getUsuarioById } = require('./usuario.controller');
 
 // Obtener todas las tareas
 
 exports.getAllTareas = async (req, res) => {
   try {
-    const tareas = await tareaService.getAllTareas();
+    const tareas = await tareaService.getAllTareas(req.usuario._id);
     res.json(tareas);
   } catch (error) {
     res.status(500).json({ mensaje: 'Error al obtener las tareas', error: error.message });
@@ -29,7 +31,7 @@ exports.getTareaById = async (req, res) => {
 
 exports.createTarea = async (req, res) => {
   try {
-    const nuevaTarea = await tareaService.createTarea(req.body);
+    const nuevaTarea = await tareaService.createTarea({...req.body,usuarioId: req.usuario._id}); // Asignar el usuarioId automáticamente
     res.status(201).json(nuevaTarea);
   } catch (error) {
     res.status(400).json({ mensaje: 'Error al crear la tarea', error: error.message });

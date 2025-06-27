@@ -4,7 +4,13 @@ const PORT = 3000; // Puerto donde escuchará el servidor
 const mongoose = require('mongoose');
 require('dotenv').config();
 const connectDB = require('./config/database');
+const cors = require('cors');
 connectDB();
+
+app.use(cors({
+  origin: 'http://localhost:5173' 
+})); // Habilitar CORS
+
 
 //importar rutas
 
